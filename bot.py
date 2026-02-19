@@ -1,6 +1,6 @@
 import telebot
-import openai
 import os
+from openai import OpenAI
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -8,17 +8,16 @@ DRAFT_CHANNEL_ID = int(os.environ.get("DRAFT_CHANNEL_ID"))
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# این خط مهمه — webhook رو حذف می‌کنه
+# حذف webhook برای جلوگیری از conflict
 bot.remove_webhook()
 
-openai.api_key = OPENAI_API_KEY
+# ساخت client جدید OpenAI
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def rewrite(text):
 
     prompt = f"""
 بازنویسی کن به سبک خبری برای رسانه Alara Entertainment.
-
-فرمت خروجی:
 
 🇮🇷 فارسی:
 headline:
@@ -32,9 +31,11 @@ text:
 {text}
 """
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role":"user","content":prompt}]
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
 
     return response.choices[0].message.content
@@ -54,5 +55,4 @@ def handle(message):
 
 
 print("Bot running...")
-
 bot.infinity_polling()
